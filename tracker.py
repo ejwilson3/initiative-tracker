@@ -11,12 +11,12 @@ class _Combatant():
         self.AC = 0
         self.HP = 1
 
-# Display relevant information for the combatant in question
-def spill(fighter):
-    fmt = "{id:d}\t{init:d}\t{name:s}\t\t{HP:d}\t{AC:d}"
-    print(fmt.format(id=fighter.idx, init=fighter.initiative, name=fighter.name,
-                     HP=fighter.HP, AC = fighter.AC))
-    return
+    # Display relevant information for the combatant in question
+    def spill(self):
+        fmt = "{id:d}\t{init:d}\t{name:s}\t\t{HP:d}\t{AC:d}"
+        print(fmt.format(id=fighter.idx, init=fighter.initiative,
+                         name=fighter.name, HP=fighter.HP, AC = fighter.AC))
+        return
 
 # Create a new Combatant. Different from the _Combatant.init() because they
 # don't need to enter information if it's being loaded from a file.
@@ -27,8 +27,15 @@ def new_fighter():
         NPC = input("NPC or PC? ")
     newFighter.PC = (NPC ==  "PC")
     newFighter.name = input("Name: ")
-    newFighter.modifier = int(input("Modifier: "))
-    #newFighter.modifier = modifer
+    modifier = input("Modifier: ")
+    if (modifier[0] == "+"):
+        modifier = modifier[1:]
+    try:
+        newFighter.modifier = int(modifier)
+    except ValueError:
+        # TODO Find a better way to do this; modifier can't be changed later.
+        print("What are you doing? Setting it to 0.")
+        newFighter.modifier = 0
     newFighter.initiative = random.randrange(1, 21) + newFighter.modifier
     return newFighter
 
@@ -48,7 +55,7 @@ while running:
         # We're just using a simple terminal display, so we have to print out
         # the entire initiative list every time.
         for fighter in combatants:
-            spill(fighter)
+            fighter.spill()
 
     print("q = quit, n = new, r = reroll, e = edit, l = load, s = Save, "
           "d = damage")
@@ -57,58 +64,75 @@ while running:
     # Replace all of this with a switch?
     # Damage a combatant
     if command == "d":
-        editee = _Combatant()
-        idx = int(input("idx "))
-        for fighter in combatants:
-            if fighter.idx == idx:
-                editee = fighter
-                break
-        damage = int(input("damage "))
-        editee.HP -= damage
-        if editee.HP <= 0:
-            editee.HP = 0 
-            if input("kill? ") in ["y", "yes"]:
-                combatants.remove(editee)
-                # This seems inefficient. Only an insane GM would have enough
-                # people in a single combat for it to matter, but is there a
-                # better way?
-                for fighter in combatants:
-                    if fighter.idx > idx:
-                        fighter.idx -= 1
+        try:
+            editee = _Combatant()
+            idx = int(input("idx "))
+            # TODO Find a way to break if fighter not found, instead of making
+            # user go through the rest of "d".
+            for fighter in combatants:
+                if fighter.idx == idx:
+                    editee = fighter
+                    break
+            damage = int(input("damage "))
+            editee.HP -= damage
+            if editee.HP <= 0:
+                editee.HP = 0 
+                if input("kill? ") in ["y", "yes"]:
+                    combatants.remove(editee)
+                    # This seems inefficient. Only an insane GM would have
+                    # enough people in a single combat for it to matter, but is
+                    # there a better way?
+                    for fighter in combatants:
+                        if fighter.idx > idx:
+                            fighter.idx -= 1
+        except ValueError:
+            print("What are you doing?")        
 
     # Edit the information for a combatant. This is important because I don't
     # want to add so much for everyone, when it's an initiative tracker.
     elif command == "e":
-        editee = _Combatant()
-        idx = int(input("idx "))
-        for fighter in combatants:
-            if fighter.idx == idx:
-                editee = fighter
-                break
-        editee.HP = int(input("New HP "))
-        editee.AC = int(input("New AC "))
-        initiative = input("New Initiative? ")
-        if initiative:
-            editee.initiative = int(initiative)
+        try:
+            editee = _Combatant()
+            idx = int(input("idx "))
+            for fighter in combatants:
+                if fighter.idx == idx:
+                    editee = fighter
+                    break
+            editee.HP = int(input("New HP "))
+            editee.AC = int(input("New AC "))
+            initiative = input("New Initiative? ")
+            try:
+                if initiative:
+                    editee.initiative = int(initiative)
+            except ValueError:
+                pass
+        except ValueError:
+            print("What are you doing?")
 
-    # Load a file previously saved.
+    # Load a file previously saved. Only accepts .txt files, and adds extension
+    # automatically. Change this?
     elif command == "l":
-        filename = input("filename ")
-        f = open(filename + ".txt", "r")
-        contents = f.read()
-        contents = contents.split("\n")
-        for fighter in contents:
-            newFighter = _Combatant()
-            fighter = fighter.split(",")
-            newFighter.name = fighter[0]
-            newFighter.initiative = int(fighter[1])
-            newFighter.modifier = int(fighter[2])
-            newFighter.HP = int(fighter[3])
-            newFighter.AC = int(fighter[4])
-            newFighter.PC = bool(fighter[5])
-            newFighter.idx = len(combatants)
-            combatants.append(newFighter)
-        f.close()
+        try:
+            filename = input("filename ")
+            f = open(filename + ".txt", "r")
+            contents = f.read()
+            contents = contents.split("\n")
+            for fighter in contents:
+                newFighter = _Combatant()
+                fighter = fighter.split(",")
+                newFighter.name = fighter[0]
+                newFighter.initiative = int(fighter[1])
+                newFighter.modifier = int(fighter[2])
+                newFighter.HP = int(fighter[3])
+                newFighter.AC = int(fighter[4])
+                newFighter.PC = bool(fighter[5])
+                newFighter.idx = len(combatants)
+                combatants.append(newFighter)
+            f.close()
+        except FileNotFoundError:
+            print("File not found")
+        except:
+            print("This file is not properly formatted.")
 
     # Add a new combatant.
     elif command == "n":
@@ -138,9 +162,12 @@ while running:
                         str(fighter.AC) + "," + str(fighter.PC) + "\n"
         data = data[:-1]
         filename = input("filename ")
-        f = open(filename + ".txt", "w")
-        f.write(data)
-        f.close()
+        try:
+            f = open(filename + ".txt", "w")
+            f.write(data)
+            f.close()
+        except FileNotFoundError:
+            print("Something went wrong. Please try a different filename.")
 
 
     print("")
