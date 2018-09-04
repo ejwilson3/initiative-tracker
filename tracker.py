@@ -1,16 +1,25 @@
 #!/usr/bin/env python
 import random
+
+################################################################################
+# DEFINE CLASSES, FUNCTIONS, AND SUBROUTINES
+################################################################################
+
+# Class to contain the information for each combatant
 class _Combatant():
     def __init__(self):
         self.AC = 0
         self.HP = 1
 
+# Display relevant information for the combatant in question
 def spill(fighter):
     fmt = "{id:d}\t{init:d}\t{name:s}\t\t{HP:d}\t{AC:d}"
     print(fmt.format(id=fighter.idx, init=fighter.initiative, name=fighter.name,
                      HP=fighter.HP, AC = fighter.AC))
     return
 
+# Create a new Combatant. Different from the _Combatant.init() because they
+# don't need to enter information if it's being loaded from a file.
 def new_fighter():
     newFighter = _Combatant()
     NPC = ""
@@ -23,20 +32,30 @@ def new_fighter():
     newFighter.initiative = random.randrange(1, 21) + newFighter.modifier
     return newFighter
 
+################################################################################
+# END OF DEFINITIONS
+################################################################################
+
 combatants = []
 running = True
 
 while running:
-    
+ 
     if combatants != []:
         stats = "id\tinit\tname\t\tHP\tAC"
         print(stats)
+
+        # We're just using a simple terminal display, so we have to print out
+        # the entire initiative list every time.
         for fighter in combatants:
             spill(fighter)
+
     print("q = quit, n = new, r = reroll, e = edit, l = load, s = Save, "
           "d = damage")
     command = input("? ")
 
+    # Replace all of this with a switch?
+    # Damage a combatant
     if command == "d":
         editee = _Combatant()
         idx = int(input("idx "))
@@ -50,10 +69,15 @@ while running:
             editee.HP = 0 
             if input("kill? ") in ["y", "yes"]:
                 combatants.remove(editee)
+                # This seems inefficient. Only an insane GM would have enough
+                # people in a single combat for it to matter, but is there a
+                # better way?
                 for fighter in combatants:
                     if fighter.idx > idx:
                         fighter.idx -= 1
 
+    # Edit the information for a combatant. This is important because I don't
+    # want to add so much for everyone, when it's an initiative tracker.
     elif command == "e":
         editee = _Combatant()
         idx = int(input("idx "))
@@ -67,6 +91,7 @@ while running:
         if initiative:
             editee.initiative = int(initiative)
 
+    # Load a file previously saved.
     elif command == "l":
         filename = input("filename ")
         f = open(filename + ".txt", "r")
@@ -85,21 +110,26 @@ while running:
             combatants.append(newFighter)
         f.close()
 
+    # Add a new combatant.
     elif command == "n":
         newFighter = new_fighter()
         newFighter.idx = len(combatants)
         combatants.append(newFighter)
         combatants.sort(key=lambda x: x.initiative, reverse=True)
 
+    # Quit the program.
     elif command == "q":
         running = False
 
+    # Reroll the initiatives. Always rerolls all of the NPCs, but you have the
+    # option to reroll PCs too.
     elif command == "r":
         PCs = input("PCs? ") in ["y", "yes"]
         for fighter in combatants:
             if PCs or not fighter.PC:
                 fighter.initiative = random.randrange(1, 21) + fighter.modifier
 
+    # Save the current initiatives. Does not save IDs.
     elif command == "s":
         data = ''
         for fighter in combatants:
