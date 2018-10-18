@@ -14,6 +14,8 @@ class _Combatant():
     # Display relevant information for the combatant in question
     def spill(self):
         fmt = "{id:d}\t{init:d}\t{name:s}\t\t{HP:d}\t{AC:d}"
+        if len(fighter.name) > 7:
+            fmt = "{id:d}\t{init:d}\t{name:s}\t{HP:d}\t{AC:d}"
         print(fmt.format(id=fighter.idx, init=fighter.initiative,
                          name=fighter.name, HP=fighter.HP, AC = fighter.AC))
         return
@@ -26,7 +28,7 @@ def new_fighter():
     while (NPC != "NPC" and NPC != "PC"):
         NPC = input("NPC or PC? ")
     newFighter.PC = (NPC ==  "PC")
-    newFighter.name = input("Name: ")
+    newFighter.name = input("Name: ")[:15]
     modifier = input("Modifier: ")
     if (modifier[0] == "+"):
         modifier = modifier[1:]
@@ -57,13 +59,12 @@ while running:
         for fighter in combatants:
             fighter.spill()
 
-    print("q = quit, n = new, r = reroll, e = edit, l = load, s = Save, "
-          "d = damage")
     command = input("? ")
 
     # Replace all of this with a switch?
+    # Turns out they don't have real switches in Python...
     # Damage a combatant
-    if command == "d":
+    if command == "d" or command == "damage":
         try:
             editee = _Combatant()
             idx = int(input("idx "))
@@ -90,7 +91,7 @@ while running:
 
     # Edit the information for a combatant. This is important because I don't
     # want to add so much for everyone, when it's an initiative tracker.
-    elif command == "e":
+    elif command == "e" or command == "edit":
         try:
             editee = _Combatant()
             idx = int(input("idx "))
@@ -109,9 +110,14 @@ while running:
         except ValueError:
             print("What are you doing?")
 
+    # Spit out list of commands
+    elif command == "h" or command == "help":
+        print("d = damage, e = edit, h = help, l = load, n = new, q = quit, "
+              "r = reroll, s = save")
+
     # Load a file previously saved. Only accepts .txt files, and adds extension
     # automatically. Change this?
-    elif command == "l":
+    elif command == "l" or command == "load":
         try:
             filename = input("filename ")
             f = open(filename + ".txt", "r")
@@ -135,26 +141,27 @@ while running:
             print("This file is not properly formatted.")
 
     # Add a new combatant.
-    elif command == "n":
+    elif command == "n" or command == "new":
         newFighter = new_fighter()
         newFighter.idx = len(combatants)
         combatants.append(newFighter)
         combatants.sort(key=lambda x: x.initiative, reverse=True)
 
     # Quit the program.
-    elif command == "q":
+    elif command == "q" or command == "quit":
         running = False
 
     # Reroll the initiatives. Always rerolls all of the NPCs, but you have the
     # option to reroll PCs too.
-    elif command == "r":
+    elif command == "r" or command == "reroll":
         PCs = input("PCs? ") in ["y", "yes"]
         for fighter in combatants:
             if PCs or not fighter.PC:
                 fighter.initiative = random.randrange(1, 21) + fighter.modifier
+        combatants.sort(key=lambda x: x.initiative, reverse=True)
 
     # Save the current initiatives. Does not save IDs.
-    elif command == "s":
+    elif command == "s" or command == "save":
         data = ''
         for fighter in combatants:
             data = data + fighter.name + "," + str(fighter.initiative) + "," + \
