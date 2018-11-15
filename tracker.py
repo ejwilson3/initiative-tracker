@@ -36,7 +36,7 @@ def new_fighter():
         newFighter.modifier = int(modifier)
     except ValueError:
         # TODO Find a better way to do this; modifier can't be changed later.
-        print("What are you doing? Setting it to 0.")
+        print("Unknown value; set to 0.")
         newFighter.modifier = 0
     newFighter.initiative = random.randrange(1, 21) + newFighter.modifier
     return newFighter
@@ -101,19 +101,26 @@ while running:
                     break
             editee.HP = int(input("New HP "))
             editee.AC = int(input("New AC "))
-            initiative = input("New Initiative? ")
-            try:
-                if initiative:
-                    editee.initiative = int(initiative)
-            except ValueError:
-                pass
         except ValueError:
-            print("What are you doing?")
+            print("Unexpected value")
 
     # Spit out list of commands
     elif command == "h" or command == "help":
-        print("d = damage, e = edit, h = help, l = load, n = new, q = quit, "
-              "r = reroll, s = save")
+        print("d = damage,\ne = edit,\nh = help,\ni = initiative overwrite,\n"
+        "l = load,\nn = new,\nq = quit,\nr = reroll,\ns = save")
+
+    elif command == "i" or command == "initiative":
+        try:
+            editee = _Combatant()
+            idx = int(input("idx "))
+            for fighter in combatants:
+                if fighter.idx == idx:
+                    editee = fighter
+                    break
+            editee.initiative = int(input("New Initiative "))
+            combatants.sort(key=lambda x: x.initiative, reverse=True)
+        except ValueError:
+            print("Unexpected value")
 
     # Load a file previously saved. Only accepts .txt files, and adds extension
     # automatically. Change this?
