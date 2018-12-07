@@ -10,15 +10,30 @@ class _Combatant():
     def __init__(self):
         self.AC = 0
         self.HP = 1
+        self.iteration = 0
 
     # Display relevant information for the combatant in question
     def spill(self):
         fmt = "{id:d}\t{init:d}\t{name:s}\t\t{HP:d}\t{AC:d}"
-        if len(fighter.name) > 7:
+        if len(self.name) > 7:
             fmt = "{id:d}\t{init:d}\t{name:s}\t{HP:d}\t{AC:d}"
-        print(fmt.format(id=fighter.idx, init=fighter.initiative,
-                         name=fighter.name, HP=fighter.HP, AC = fighter.AC))
+        print(fmt.format(id=self.idx, init=fighter.initiative,
+                         name=self.name, HP=fighter.HP, AC = fighter.AC))
         return
+
+    def copy(self):
+        copyFighter = _Combatant()
+        copyFighter.AC = self.AC
+        copyFighter.HP = self.HP
+        copyFighter.iteration = self.iteration + 1
+        copyFighter.name = self.name
+        if self.iteration > 0:
+            copyFighter.name = copyFighter.name[:-1]
+        copyFighter.name += str(copyFighter.iteration)
+        copyFighter.modifier = self.modifier
+        copyFighter.PC = False
+        return copyFighter
+        
 
 # Create a new Combatant. Different from the _Combatant.init() because they
 # don't need to enter information if it's being loaded from a file.
@@ -61,6 +76,22 @@ while running:
 
     command = input("? ")
 
+    if command == "dup" or command == "duplicate":
+        try:
+            dupee = _Combatant
+            idx = int(input("idx "))
+            for fighter in combatants:
+                if fighter.idx == idx:
+                    dupee = fighter.copy()
+                    break
+            dupee.idx = len(combatants)
+            dupee.initiative = random.randrange(1, 21) + dupee.modifier
+            combatants.append(dupee)
+            combatants.sort(key=lambda x: x.initiative, reverse=True)
+        except ValueError:
+            print("Unexpected Value")
+            
+
     # Replace all of this with a switch?
     # Turns out they don't have real switches in Python...
     # Damage a combatant
@@ -87,7 +118,7 @@ while running:
                         if fighter.idx > idx:
                             fighter.idx -= 1
         except ValueError:
-            print("What are you doing?")        
+            print("Unexpected Value")        
 
     # Edit the information for a combatant. This is important because I don't
     # want to add so much for everyone, when it's an initiative tracker.
